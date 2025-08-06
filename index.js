@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 10000;
 app.use(bodyParser.json());
 
 const VERIFY_TOKEN = "mioTokenSegreto"; // Sostituisci con il tuo token di verifica
-const WHATSAPP_TOKEN = "EAAToMmfuQIYBPOrEY8TkvFNZAHwLxmFpiigMohbQcyyA9gDF5hAwxJr6vLOwZBXKGp4SsXTN4GnOydUdZCbReZB9eZCs1DiBofOmmFkDKdrIgZCsB4E30yxQxLxwlees368zICIvxuUuUKFaH2teUBdhZCmZCRjnVSyNOuDlt6CduZBO7zwwzWX54kKsKBHDERJvDuTfouqR4O7hoMjlBvgHX1enkAmS0VXvtitXlk0ZAzgb7xPBskIrzPaLwU4xrc"; // Inserisci qui il tuo token WhatsApp
+const WHATSAPP_TOKEN = "EAAToMmfuQIYBPGlGFQitFaLCfWuDa83ienRS8ZC4NdkHuMLOvaiO24EDyyrXEoGCHqUcf9tLxEDREnYFE3l7lwaQfM4q9qRSME9ZCPf4BkryYWCnyHxbz659IXAYkjB1ZAZBq4ZBBPVUDU44aO0ZCk1OAcYcA2CLVIqzL9T6lq2CDdLfCYxYCZCxdHRz7NVIv5Fm8zLcD3qAxK6vNzoFXTS2QN7xzpZCpCx3xDHxGB6uUSxrEvs2l11kxbkx8tjt"; // Inserisci qui il tuo token WhatsApp
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY; // Inserisci qui la tua API key di OpenAI
 
 // ✅ Verifica Webhook (GET)
