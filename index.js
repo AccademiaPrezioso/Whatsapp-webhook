@@ -1,80 +1,90 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const axios = require("axios");
+const bodyParser = require("body-parser");
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Configura il tuo token e ID
-const VERIFY_TOKEN = "mioTokenSegreto"; // deve essere identico a quello inserito su Meta
-const ACCESS_TOKEN = "EAAToMmfuQIYBPOrEY8TkvFNZAHwLxmFpiigMohbQcyyA9gDF5hAwxJr6vLOwZBXKGp4SsXTN4GnOydUdZCbReZB9eZCs1DiBofOmmFkDKdrIgZCsB4E30yxQxLxwlees368zICIvxuUuUKFaH2teUBdhZCmZCRjnVSyNOuDlt6CduZBO7zwwzWX54kKsKBHDERJvDuTfouqR4O7hoMjlBvgHX1enkAmS0VXvtitXlk0ZAzgb7xPBskIrzPaLwU4xrc";
-const PHONE_NUMBER_ID = "737502216104629";
-
 app.use(bodyParser.json());
 
-// Verifica iniziale webhook con Meta
+const VERIFY_TOKEN = "mioTokenSegreto"; // Sostituisci con il tuo token di verifica
+const WHATSAPP_TOKEN = "EAAToMmfuQIYBPOrEY8TkvFNZAHwLxmFpiigMohbQcyyA9gDF5hAwxJr6vLOwZBXKGp4SsXTN4GnOydUdZCbReZB9eZCs1DiBofOmmFkDKdrIgZCsB4E30yxQxLxwlees368zICIvxuUuUKFaH2teUBdhZCmZCRjnVSyNOuDlt6CduZBO7zwwzWX54kKsKBHDERJvDuTfouqR4O7hoMjlBvgHX1enkAmS0VXvtitXlk0ZAzgb7xPBskIrzPaLwU4xrc"; // Inserisci qui il tuo token WhatsApp
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY; // Inserisci qui la tua API key di OpenAI
+
+// ✅ Verifica Webhook (GET)
 app.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
-  if (mode && token) {
-    if (mode === "subscribe" && token === VERIFY_TOKEN) {
-      console.log("✅ Webhook verificato!");
-      res.status(200).send(challenge);
-    } else {
-      res.sendStatus(403);
-    }
+  if (mode && token === VERIFY_TOKEN) {
+    console.log("🔐 Webhook verificato!");
+    res.status(200).send(challenge);
+  } else {
+    res.sendStatus(403);
   }
 });
 
-// Gestione ricezione messaggi
+// ✅ Ricezione messaggi (POST)
 app.post("/webhook", async (req, res) => {
-  const body = req.body;
+  try {
+    const entry = req.body.entry?.[0];
+    const changes = entry?.changes?.[0];
+    const message = changes?.value?.messages?.[0];
 
-  console.log("📩 Messaggio ricevuto:", JSON.stringify(body, null, 2));
+    if (message) {
+      const from = message.from;
+      const userMessage = message.text?.body;
 
-  if (
-    body.object &&
-    body.entry &&
-    body.entry[0].changes &&
-    body.entry[0].changes[0].value.messages &&
-    body.entry[0].changes[0].value.messages[0]
-  ) {
-    const message = body.entry[0].changes[0].value.messages[0];
-    const from = message.from; // Numero del mittente
-    const text = message.text.body; // Testo del messaggio ricevuto
+      console.log("💬 Messaggio ricevuto:", userMessage);
 
-    console.log(`✉️ Da: ${from} - Testo: ${text}`);
-
-    // Invia una risposta automatica
-    try {
-      await axios({
-        method: "POST",
-        url: `https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages`,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${ACCESS_TOKEN}`,
+      // Chiamata a OpenAI GPT
+      const gptResponse = await axios.post(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          model: "gpt-3.5-turbo",
+          messages: [
+            { role: "system", content: "Sei una segreteria virtuale professionale di un'accademia di danza sportiva." },
+            { role: "user", content: userMessage }
+          ]
         },
-        data: {
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${OPENAI_API_KEY}`
+          }
+        }
+      );
+
+      const reply = gptResponse.data.choices[0].message.content;
+
+      // Risposta via WhatsApp
+      await axios.post(
+        "https://graph.facebook.com/v18.0/737502216104629/messages",
+        {
           messaging_product: "whatsapp",
           to: from,
-          text: {
-            body: "Grazie per il tuo messaggio! Ti risponderemo il prima possibile.",
-          },
+          text: { body: reply }
         },
-      });
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: WHATSAPP_TOKEN
+          }
+        }
+      );
 
-      console.log("✅ Risposta inviata");
-    } catch (error) {
-      console.error("❌ Errore nell'invio della risposta:", error.response?.data || error.message);
+      console.log("✅ Risposta inviata:", reply);
     }
-  }
 
-  res.sendStatus(200);
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("❌ Errore durante la gestione del messaggio:", error.response?.data || error.message);
+    res.sendStatus(500);
+  }
 });
 
-// Avvia il server
+// ✅ Avvio server
 app.listen(PORT, () => {
   console.log(`🚀 Server attivo su porta ${PORT}`);
 });
