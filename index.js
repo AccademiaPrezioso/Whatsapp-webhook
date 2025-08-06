@@ -82,7 +82,7 @@ Messaggio dell’utente:
 const PHONE_NUMBER_ID = 737502216104629
       // Risposta via WhatsApp
       await axios.post(
-        'https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages',
+        `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
         {
           messaging_product: "whatsapp",
           to: from,
